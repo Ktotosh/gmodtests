@@ -1,0 +1,85 @@
+--@name legenda.the.best crossbow sounds
+--@author KTATESNI THE SVYATOI CHELOVEK
+--@shared
+if SERVER then
+    hook.add("EntityTakeDamage","PlayDmgSound",function(target, attacker, inflictor, amount, type, pos, force)
+        if attacker == owner() and owner():getActiveWeapon():getClass() == "weapon_crossbow" and ( target:isNPC() or target:isPlayer() ) then 
+            net.start("crossbowdamage")
+            net.writeFloat(math.random(1,3))
+            net.send()
+        end
+    end)
+    net.receive("svbyau", function()
+        net.start("clbyau")
+        net.writeFloat(math.random(1,4))
+        net.send()
+    end)
+    
+    net.receive("svogon", function()
+        net.start("clogon")
+        net.writeFloat(math.random(1,12))
+        net.send()
+    end)
+end
+
+if CLIENT then
+    local maxbass = bass.soundsLeft()
+    local Playing = 0
+    local Playing2 = 0
+    function playbyau(value) 
+        bass.loadURL("https://raw.githubusercontent.com/Ktotosh/gmodtests/refs/heads/main/crossbowsounds/bau".. value..".mp3", "3d noblock", function(s)
+            s:setPos(owner():getEyePos())
+            timer.simple(s:getLength(),function()
+                s:stop()
+                Playing = 0
+            end)
+        end)
+    end
+    function playogon(value) 
+        bass.loadURL("https://raw.githubusercontent.com/Ktotosh/gmodtests/refs/heads/main/crossbowsounds/ogon".. value..".mp3", "3d noblock", function(s)
+            s:setPos(owner():getEyePos())
+            timer.simple(s:getLength(),function()
+                s:stop()
+                Playing2 = 0
+            end)
+        end)
+    end
+    hook.add("keyPress","PlaySound1",function(p,k)
+        local Weapon = owner():getActiveWeapon()
+        if not owner():isAlive() then return end
+        if k==1 and Weapon:getClass() == "weapon_crossbow" and bass.soundsLeft() > 0 and Weapon:clip1() == 1 and Playing == 0 and p == owner() then
+            Playing = 1
+            net.start("svbyau")
+            net.send()
+        end 
+    end)
+    hook.add("PlayerSwitchWeapon","PlaySound1",function(p,ow,nw)
+        if nw:getClass() == "weapon_crossbow" and Playing2 == 0 and p == owner() then
+            Playing2 = 1
+            net.start("svogon")
+            net.send()
+        end 
+    end)
+    
+    net.receive("crossbowdamage", function()
+        local value = net.readFloat()
+        timer.simple(1,function()
+            bass.loadURL("https://raw.githubusercontent.com/Ktotosh/gmodtests/refs/heads/main/crossbowsounds/domash".. value..".mp3", "3d noblock", function(s)
+                s:setPos(owner():getEyePos())
+                timer.simple(s:getLength(),function()
+                    s:stop()
+                end)
+            end)      
+        end)
+    end)
+    net.receive("clbyau", function()
+        local value = net.readFloat()
+        playbyau(value)
+    end)
+    net.receive("clogon", function()
+        local value = net.readFloat()
+        playogon(value)
+    end)
+    
+end
+
